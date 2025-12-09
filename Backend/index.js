@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors());
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_DB; // 👈 yahan bhi naam dhyaan se
+const MONGO_URI = process.env.MONGO_DB; 
 
 if (!MONGO_URI) {
   console.error("Mongo URI not found. Check your .env file (MONGO_DB)");
