@@ -142,7 +142,7 @@ const getProfile  = async(req,res)=>{
   }
 
 }
-export const editProfile = async (req, res) => {
+const editProfile = async (req, res) => {
     try {
         const userId = req.id;
         const { bio, gender } = req.body;

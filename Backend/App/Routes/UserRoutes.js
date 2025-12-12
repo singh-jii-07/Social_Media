@@ -1,5 +1,5 @@
 import express from "express";
-import isAuthenticated from "../Middleware/isAuthenticated.js";
+import isAuthenticated from "../Middleware/isAuthenticated .js";
 import {
   register,
   login,
@@ -25,4 +25,4 @@ userRoutes.post(
 );
 userRoutes.get("/suggested", isAuthenticated, getSuggestedUsers);
 userRoutes.post("/followorunfollow/:id", isAuthenticated, followOrUnfollow);
-export default router;
+export default userRoutes;
