@@ -125,4 +125,56 @@ const logout = async (req, res) => {
   }
 };
 
-export { register, login,logout };
+const getProfile  = async(req,res)=>{
+  try{
+    const userId= req.params.id;
+    let user = await User.findById(userId);
+    return res.status(200).json({
+      user
+    })
+  } catch (err) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+
+}
+export const editProfile = async (req, res) => {
+    try {
+        const userId = req.id;
+        const { bio, gender } = req.body;
+        const profilePicture = req.file;
+        let cloudResponse;
+
+        if (profilePicture) {
+            const fileUri = getDataUri(profilePicture);
+            cloudResponse = await cloudinary.uploader.upload(fileUri);
+        }
+
+        const user = await User.findById(userId).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found.',
+                success: false
+            });
+        };
+        if (bio) user.bio = bio;
+        if (gender) user.gender = gender;
+        if (profilePicture) user.profilePicture = cloudResponse.secure_url;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: 'Profile updated.',
+            success: true,
+            user
+        });
+
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+
+export { register, login,logout,getProfile,editProfile };
