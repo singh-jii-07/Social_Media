@@ -1,6 +1,8 @@
 import User from "../Models/UserModels.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import getDataUri from "../Util/datauri.js";
+import cloudinary from "../Util/cloudinary.js";
 
 const register = async (req, res) => {
   try {
