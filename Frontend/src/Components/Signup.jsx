@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-
+import { useNavigate } from "react-router-dom";
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -10,7 +10,7 @@ const Signup = () => {
   });
 
   const [loading, setLoading] = useState(false);
-
+  const navigate=useNavigate()
   const changeHandler = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -39,6 +39,8 @@ const Signup = () => {
       if (res.data.success) {
         toast.success("User registered successfully 🎉");
         setFormData({ username: "", email: "", password: "" });
+
+        navigate("/login")
       }
     } catch (error) {
       toast.error(
