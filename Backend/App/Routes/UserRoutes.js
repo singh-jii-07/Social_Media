@@ -1,5 +1,5 @@
 import express from "express";
-import isAuthenticated from "../Middleware/isAuthenticated .js";
+import isAuthenticated from "../Middleware/isAuthenticated.js";
 import {
   register,
   login,

@@ -114,18 +114,23 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    return res.status(200).json({
-      message: "Logout successful",
-      success: true,
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "strict",
     });
 
-  } catch (err) {
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
     return res.status(500).json({
-      message: "Internal Server Error",
-      error: err.message,
+      success: false,
+      message: "Logout failed",
     });
   }
 };
+
 
 const getProfile  = async(req,res)=>{
   try{

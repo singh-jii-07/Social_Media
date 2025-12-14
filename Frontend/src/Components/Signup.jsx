@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -100,6 +100,12 @@ const Signup = () => {
         >
           {loading ? "Please wait..." : "Signup"}
         </button>
+        <spam className="text-center">
+          Already You have and Account?
+          <Link to="/login" className="text-blue-600">
+          Login
+          </Link>
+        </spam>
       </form>
     </div>
   );
