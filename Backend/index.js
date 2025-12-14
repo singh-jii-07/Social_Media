@@ -5,12 +5,14 @@ import mongoose from 'mongoose'
 import userRoutes from './App/Routes/UserRoutes.js'
 import Postrouter from './App/Routes/PostRoutes.js'
 import messageRoutes from './App/Routes/MessageRoutes.js'
+import cookieParser from "cookie-parser";
 
 
 const app = express();
 dotenv.config();
 
 app.use(express.json());
+app.use(cookieParser());
 const allowedOrigins = ["http://localhost:5173"];
 
 app.use(cors({
