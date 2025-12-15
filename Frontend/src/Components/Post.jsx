@@ -11,12 +11,12 @@ import {
   FaRegBookmark,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { authHeader } from "../utils/authHeader";
 
 const API = "http://localhost:5000/api/post";
 
 function Post({ post, loggedInUserId, onPostDelete }) {
 
-  /* ===== SAFETY: loading fallback ===== */
   if (!post) {
     return (
       <div className="my-6 w-full max-w-md mx-auto bg-white border rounded-md p-4">
@@ -30,6 +30,7 @@ function Post({ post, loggedInUserId, onPostDelete }) {
   const [likesCount, setLikesCount] = useState(0);
   const [saved, setSaved] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
@@ -43,15 +44,13 @@ function Post({ post, loggedInUserId, onPostDelete }) {
   /* ===== LIKE / DISLIKE ===== */
   const likeHandler = async () => {
     try {
-      if (liked) {
-        await axios.get(`${API}/dislike/${post._id}`, { withCredentials: true });
-        setLiked(false);
-        setLikesCount((p) => p - 1);
-      } else {
-        await axios.get(`${API}/like/${post._id}`, { withCredentials: true });
-        setLiked(true);
-        setLikesCount((p) => p + 1);
-      }
+      await axios.get(
+        `${API}/${liked ? "dislike" : "like"}/${post._id}`,
+        { headers: authHeader() }
+      );
+
+      setLiked(!liked);
+      setLikesCount((p) => (liked ? p - 1 : p + 1));
     } catch {
       toast.error("Like failed");
     }
@@ -60,13 +59,18 @@ function Post({ post, loggedInUserId, onPostDelete }) {
   /* ===== ADD COMMENT ===== */
   const addCommentHandler = async () => {
     if (!comment.trim()) return;
+
     try {
       const res = await axios.post(
         `${API}/comment/${post._id}`,
         { text: comment },
-        { withCredentials: true }
+        { headers: authHeader() }
       );
-      setComments((prev) => [res.data.comment, ...prev]);
+
+      if (showComments) {
+        setComments((prev) => [res.data.comment, ...prev]);
+      }
+
       setComment("");
     } catch {
       toast.error("Comment failed");
@@ -79,7 +83,7 @@ function Post({ post, loggedInUserId, onPostDelete }) {
       const res = await axios.post(
         `${API}/comment/all/${post._id}`,
         {},
-        { withCredentials: true }
+        { headers: authHeader() }
       );
       setComments(res.data.comments);
       setShowComments(true);
@@ -88,14 +92,14 @@ function Post({ post, loggedInUserId, onPostDelete }) {
     }
   };
 
-  /* ===== DELETE POST (NO RELOAD) ===== */
+  /* ===== DELETE POST ===== */
   const deletePostHandler = async () => {
     try {
       await axios.delete(`${API}/delete/${post._id}`, {
-        withCredentials: true,
+        headers: authHeader(),
       });
       toast.success("Post deleted");
-      onPostDelete(post._id); // 🔥 parent ko update
+      onPostDelete(post._id);
     } catch {
       toast.error("Not authorized");
     }
@@ -104,9 +108,10 @@ function Post({ post, loggedInUserId, onPostDelete }) {
   /* ===== BOOKMARK ===== */
   const bookmarkHandler = async () => {
     try {
-      const res = await axios.get(`${API}/bookmark/${post._id}`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${API}/bookmark/${post._id}`,
+        { headers: authHeader() }
+      );
       setSaved(res.data.type === "saved");
       toast.success(res.data.message);
     } catch {
@@ -122,7 +127,7 @@ function Post({ post, loggedInUserId, onPostDelete }) {
         <div className="flex items-center gap-2">
           <FaUserCircle size={32} className="text-gray-500" />
           <span className="font-semibold text-sm">
-            {post.author?.username}
+            {post.author?.username || "Unknown"}
           </span>
         </div>
 
@@ -139,7 +144,7 @@ function Post({ post, loggedInUserId, onPostDelete }) {
               {saved ? "Remove Bookmark" : "Add to Favourite"}
             </button>
 
-            {post.author?._id === loggedInUserId && (
+            {post.author?._id?.toString() === loggedInUserId && (
               <button
                 onClick={deletePostHandler}
                 className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm"
@@ -162,7 +167,11 @@ function Post({ post, loggedInUserId, onPostDelete }) {
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
           <button onClick={likeHandler}>
-            {liked ? <FaHeart size={22} className="text-red-500" /> : <FaRegHeart size={22} />}
+            {liked ? (
+              <FaHeart size={22} className="text-red-500" />
+            ) : (
+              <FaRegHeart size={22} />
+            )}
           </button>
 
           <button onClick={getAllComments}>
@@ -178,12 +187,16 @@ function Post({ post, loggedInUserId, onPostDelete }) {
       </div>
 
       {/* LIKES */}
-      <p className="font-medium text-sm ml-4">{likesCount} likes</p>
+      <p className="font-medium text-sm ml-4">
+        {likesCount} likes
+      </p>
 
       {/* CAPTION */}
       <div className="px-4 py-1">
         <p className="text-sm">
-          <span className="font-semibold">{post.author?.username}</span>{" "}
+          <span className="font-semibold">
+            {post.author?.username}
+          </span>{" "}
           {post.caption}
         </p>
       </div>
@@ -200,7 +213,9 @@ function Post({ post, loggedInUserId, onPostDelete }) {
         <div className="px-4 mt-2 space-y-1">
           {comments.map((c) => (
             <p key={c._id} className="text-sm">
-              <span className="font-semibold">{c.author?.username}</span>{" "}
+              <span className="font-semibold">
+                {c.author?.username}
+              </span>{" "}
               {c.text}
             </p>
           ))}
