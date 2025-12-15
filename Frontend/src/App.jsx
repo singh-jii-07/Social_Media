@@ -9,40 +9,46 @@ import Search from "./Components/Search";
 import Message from "./Components/Message";
 import Notifications from "./Components/Notifications";
 import Explore from "./Components/Explore";
+import ProtectedRoute from "./Components/ProtectedRoute";
 
 function App() {
   const browserRouter = createBrowserRouter([
     {
-      path: "/",
-      element: <MainLayout />,
+      element: <ProtectedRoute />,   
       children: [
         {
-          index: true,          // ✅ Home route
-          element: <Home />,
-        },
-        {
-          path: "profile",     // ✅ no slash
-          element: <Profile />,
-        },
-        {
-          path: "create",
-          element: <CreatPost />,
-        },
-        {
-          path: "search",
-          element: <Search />,
-        },
-        {
-          path: "messages",
-          element: <Message />,
-        },
-        {
-          path: "notifications",
-          element: <Notifications />,
-        },
-        {
-          path: "explore",
-          element: <Explore />,
+          path: "/",
+          element: <MainLayout />,
+          children: [
+            {
+              index: true,
+              element: <Home />,
+            },
+            {
+              path: "profile",
+              element: <Profile />,
+            },
+            {
+              path: "create",
+              element: <CreatPost />,
+            },
+            {
+              path: "search",
+              element: <Search />,
+            },
+            {
+              path: "messages",
+              element: <Message />,
+            },
+            {
+              path: "notifications",
+              element: <Notifications />,
+            },
+            {
+              path: "explore",
+              element: <Explore />,
+            },
+          ],
         },
       ],
     },

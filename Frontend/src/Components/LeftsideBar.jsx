@@ -16,9 +16,10 @@ import { useNavigate } from "react-router-dom";
 const LeftsideBar = () => {
   const navigate = useNavigate();
 
-  // 🔥 route handler
-  const sidebarHandler = (textType) => {
-    switch (textType) {
+  const token = localStorage.getItem("token");
+
+  const sidebarHandler = (text) => {
+    switch (text) {
       case "Home":
         navigate("/");
         break;
@@ -55,58 +56,65 @@ const LeftsideBar = () => {
     { icon: <FaUserCircle size={20} />, text: "Profile" },
   ];
 
+
   const logoutHandler = async () => {
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/users/logout",
-        {},
-        { withCredentials: true }
-      );
-
-      if (res.data.success) {
-        toast.success(res.data.message || "Logged out successfully");
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
+      await axios.post("http://localhost:5000/api/users/logout");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Logout failed");
+      
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      toast.success("Logged out successfully");
+      navigate("/login");
     }
   };
 
   return (
     <div className="h-screen w-64 border-r bg-white px-4 py-6 flex flex-col fixed">
-      {/* Logo */}
+      
+    
       <div className="flex items-center gap-3 mb-10 px-2">
         <h1 className="text-xl font-bold tracking-wide">BaatCheet</h1>
       </div>
 
-      {/* Menu Items */}
-      <div className="flex flex-col gap-8 flex-1">
+     
+      <div className="flex flex-col gap-6 flex-1">
         {sidebarItems.map((item, index) => (
           <div
             key={index}
-            onClick={() => sidebarHandler(item.text)}   // ✅ FIX
+            onClick={() => sidebarHandler(item.text)}
             className="flex items-center gap-3 px-3 py-2 rounded-lg
                        cursor-pointer hover:bg-gray-100 active:scale-[0.98]
                        transition-all duration-200"
           >
             <span className="text-gray-700">{item.icon}</span>
-            <span className="font-bold text-2xl text-gray-800">
+            <span className="font-semibold text-lg text-gray-800">
               {item.text}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Logout */}
-      <div
-        onClick={logoutHandler}
-        className="flex items-center gap-5 px-3 py-2 rounded-lg
-                   cursor-pointer hover:bg-red-50 transition"
-      >
-        <FaSignOutAlt size={20} className="text-red-500" />
-        <span className="text-base font-medium text-red-600">Logout</span>
-      </div>
+      {token ? (
+        <div
+          onClick={logoutHandler}
+          className="flex items-center gap-4 px-3 py-2 rounded-lg
+                     cursor-pointer hover:bg-red-50 transition"
+        >
+          <FaSignOutAlt size={20} className="text-red-500" />
+          <span className="font-medium text-red-600">Logout</span>
+        </div>
+      ) : (
+        <div
+          onClick={() => navigate("/login")}
+          className="flex items-center gap-4 px-3 py-2 rounded-lg
+                     cursor-pointer hover:bg-blue-50 transition"
+        >
+          <FaUserCircle size={20} className="text-blue-500" />
+          <span className="font-medium text-blue-600">Login</span>
+        </div>
+      )}
     </div>
   );
 };
