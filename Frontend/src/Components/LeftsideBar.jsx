@@ -16,6 +16,35 @@ import { useNavigate } from "react-router-dom";
 const LeftsideBar = () => {
   const navigate = useNavigate();
 
+  // 🔥 route handler
+  const sidebarHandler = (textType) => {
+    switch (textType) {
+      case "Home":
+        navigate("/");
+        break;
+      case "Search":
+        navigate("/search");
+        break;
+      case "Explore":
+        navigate("/explore");
+        break;
+      case "Messages":
+        navigate("/messages");
+        break;
+      case "Notifications":
+        navigate("/notifications");
+        break;
+      case "Create":
+        navigate("/create");
+        break;
+      case "Profile":
+        navigate("/profile");
+        break;
+      default:
+        break;
+    }
+  };
+
   const sidebarItems = [
     { icon: <FaHome size={20} />, text: "Home" },
     { icon: <FaSearch size={20} />, text: "Search" },
@@ -27,8 +56,6 @@ const LeftsideBar = () => {
   ];
 
   const logoutHandler = async () => {
-    console.log("Logout");
-    
     try {
       const res = await axios.post(
         "http://localhost:5000/api/users/logout",
@@ -47,8 +74,7 @@ const LeftsideBar = () => {
   };
 
   return (
-    <div className="h-screen w-64 border-r bg-white px-4 py-6 flex flex-col">
-      
+    <div className="h-screen w-64 border-r bg-white px-4 py-6 flex flex-col fixed">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-10 px-2">
         <h1 className="text-xl font-bold tracking-wide">BaatCheet</h1>
@@ -59,12 +85,13 @@ const LeftsideBar = () => {
         {sidebarItems.map((item, index) => (
           <div
             key={index}
+            onClick={() => sidebarHandler(item.text)}   // ✅ FIX
             className="flex items-center gap-3 px-3 py-2 rounded-lg
                        cursor-pointer hover:bg-gray-100 active:scale-[0.98]
                        transition-all duration-200"
           >
-            <span className="text-gray-700 ">{item.icon}</span>
-            <span className=" font-bold text-2xl text-gray-800">
+            <span className="text-gray-700">{item.icon}</span>
+            <span className="font-bold text-2xl text-gray-800">
               {item.text}
             </span>
           </div>
@@ -78,9 +105,7 @@ const LeftsideBar = () => {
                    cursor-pointer hover:bg-red-50 transition"
       >
         <FaSignOutAlt size={20} className="text-red-500" />
-        <span className="text-base font-medium text-red-600">
-          Logout
-        </span>
+        <span className="text-base font-medium text-red-600">Logout</span>
       </div>
     </div>
   );

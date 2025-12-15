@@ -1,11 +1,11 @@
 import React from 'react'
 
-function Profile() {
+function CreatPost() {
   return (
     <div>
-      Profile page 
+      CreatPost
     </div>
   )
 }
 
-export default Profile
+export default CreatPost

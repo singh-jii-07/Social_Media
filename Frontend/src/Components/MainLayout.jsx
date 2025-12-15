@@ -5,14 +5,13 @@ import LeftsideBar from "./LeftsideBar";
 function MainLayout() {
   return (
     <div className="flex min-h-screen">
-      {/* Left Sidebar */}
+      {/* Left Sidebar (fixed, width = w-64) */}
       <LeftsideBar />
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 ml-64 p-4">
         <Outlet />
       </div>
-
     </div>
   );
 }

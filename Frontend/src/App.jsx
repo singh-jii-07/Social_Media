@@ -1,9 +1,15 @@
 import Signup from "./Components/Signup";
 import Login from "./Components/Login";
-import MainLayout from './Components/MainLayout'
-import Home from './Components/Home'
+import MainLayout from "./Components/MainLayout";
+import Home from "./Components/Home";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Profile from "./Components/Profile";
+import CreatPost from "./Components/CreatPost";
+import Search from "./Components/Search";
+import Message from "./Components/Message";
+import Notifications from "./Components/Notifications";
+import Explore from "./Components/Explore";
+
 function App() {
   const browserRouter = createBrowserRouter([
     {
@@ -11,12 +17,32 @@ function App() {
       element: <MainLayout />,
       children: [
         {
-          path: "/",
+          index: true,          // ✅ Home route
           element: <Home />,
         },
         {
-          path: "/profile",
+          path: "profile",     // ✅ no slash
           element: <Profile />,
+        },
+        {
+          path: "create",
+          element: <CreatPost />,
+        },
+        {
+          path: "search",
+          element: <Search />,
+        },
+        {
+          path: "messages",
+          element: <Message />,
+        },
+        {
+          path: "notifications",
+          element: <Notifications />,
+        },
+        {
+          path: "explore",
+          element: <Explore />,
         },
       ],
     },
@@ -29,6 +55,7 @@ function App() {
       element: <Signup />,
     },
   ]);
+
   return <RouterProvider router={browserRouter} />;
 }
 
