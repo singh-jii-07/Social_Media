@@ -148,40 +148,38 @@ const getProfile  = async(req,res)=>{
 
 }
 const editProfile = async (req, res) => {
-    try {
-        const userId = req.id;
-        const { bio, gender } = req.body;
-        const profilePicture = req.file;
-        let cloudResponse;
+  try {
+    const userId = req.id;
+    const { bio, gender } = req.body;
+    const profilePhoto = req.file;
 
-        if (profilePicture) {
-            const fileUri = getDataUri(profilePicture);
-            cloudResponse = await cloudinary.uploader.upload(fileUri);
-        }
-
-        const user = await User.findById(userId).select('-password');
-        if (!user) {
-            return res.status(404).json({
-                message: 'User not found.',
-                success: false
-            });
-        };
-        if (bio) user.bio = bio;
-        if (gender) user.gender = gender;
-        if (profilePicture) user.profilePicture = cloudResponse.secure_url;
-
-        await user.save();
-
-        return res.status(200).json({
-            message: 'Profile updated.',
-            success: true,
-            user
-        });
-
-    } catch (error) {
-        console.log(error);
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    if (bio) user.bio = bio;
+    if (gender) user.gender = gender;
+
+    if (profilePhoto) {
+      const fileUri = getDataUri(profilePhoto);
+      const cloudResponse = await cloudinary.uploader.upload(fileUri);
+      user.profilePhoto = cloudResponse.secure_url;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      user
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
+
 const getSuggestedUsers = async (req, res) => {
     try {
         const suggestedUsers = await User.find({ _id: { $ne: req.id } }).select("-password");
