@@ -1,218 +1,237 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaUserCircle } from "react-icons/fa";
-import { toast } from "react-toastify";
-import { authHeader } from "../utils/authHeader";
+import { FaEllipsisH, FaCamera } from "react-icons/fa";
 
-const API = "http://localhost:5000/api/users";
+const USER_API = "http://localhost:5000/api/users";
+const POST_API = "http://localhost:5000/api/post";
 
-function Profile() {
+const Profile = () => {
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
 
-  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postLoading, setPostLoading] = useState(true);
 
+  // edit states
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  const isOwnProfile = profile?._id === loggedInUser?._id;
-  const isFollowing = profile?.followers?.includes(loggedInUser?._id);
+  const [updating, setUpdating] = useState(false);
 
   /* ================= FETCH PROFILE ================= */
   useEffect(() => {
-    if (!loggedInUser?._id) return;
-
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `${API}/profile/${loggedInUser._id}`,
-          { headers: authHeader() }
+          `${USER_API}/profile/${loggedInUser._id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
-        setProfile(res.data.user);
+        setUser(res.data.user);
         setBio(res.data.user.bio || "");
         setGender(res.data.user.gender || "");
-      } catch {
-        toast.error("Failed to load profile");
+      } catch (err) {
+        console.log(err);
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchUserPosts = async () => {
+      try {
+        const res = await axios.get(
+          `${POST_API}/getpostuser/${loggedInUser._id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setPosts(res.data.posts);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setPostLoading(false);
+      }
+    };
+
     fetchProfile();
-  }, [loggedInUser]);
+    fetchUserPosts();
+  }, []);
+
+  /* ================= IMAGE CHANGE ================= */
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Profile photo must be less than 5MB");
+      return;
+    }
+
+    setProfilePhoto(file);
+  };
 
   /* ================= UPDATE PROFILE ================= */
-  const updateProfileHandler = async () => {
-    if (saving) return;
-
+  const handleUpdateProfile = async () => {
+    setUpdating(true);
     try {
-      setSaving(true);
-
       const formData = new FormData();
       formData.append("bio", bio);
       formData.append("gender", gender);
-      if (profilePhoto) {
-        formData.append("profilePhoto", profilePhoto);
-      }
+      if (profilePhoto) formData.append("profilePhoto", profilePhoto);
 
       const res = await axios.post(
-        `${API}/profile/edit`,
+        `${USER_API}/profile/edit`,
         formData,
         {
-          headers: authHeader(), // ❌ Content-Type MAT DO
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
-      setProfile(res.data.user);
-
-      // 🔥 sync localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          ...loggedInUser,
-          bio: res.data.user.bio,
-          gender: res.data.user.gender,
-          profilePicture: res.data.user.profilePicture,
-        })
-      );
-
-      toast.success("Profile updated successfully");
+      setUser(res.data.user);
       setEditing(false);
-    } catch {
-      toast.error("Profile update failed");
+      alert("Profile updated successfully");
+    } catch (err) {
+      console.log(err);
+      alert("Profile update failed");
     } finally {
-      setSaving(false);
+      setUpdating(false);
     }
   };
 
-  /* ================= FOLLOW / UNFOLLOW ================= */
-  const followHandler = async () => {
-    try {
-      const res = await axios.post(
-        `${API}/followorunfollow/${profile._id}`,
-        {},
-        { headers: authHeader() }
-      );
-
-      toast.success(res.data.message);
-
-      setProfile((prev) => ({
-        ...prev,
-        followers: isFollowing
-          ? prev.followers.filter((id) => id !== loggedInUser._id)
-          : [...prev.followers, loggedInUser._id],
-      }));
-    } catch {
-      toast.error("Action failed");
-    }
-  };
-
-  if (loading) return <p className="p-6">Loading profile...</p>;
-  if (!profile) return <p className="p-6">Profile not found</p>;
+  if (loading) return <p className="text-center mt-10">Loading...</p>;
+  if (!user) return <p className="text-center mt-10">Profile not found</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      {/* TOP */}
-      <div className="flex items-center gap-10">
-        {profile.profilePicture ? (
+    <div className="max-w-4xl mx-auto mt-10 px-4">
+      {/* ================= TOP SECTION ================= */}
+      <div className="flex gap-10 items-center">
+        {/* PROFILE IMAGE */}
+        <div className="relative">
           <img
-            src={profile.profilePicture}
+            src={user.profilePicture || "https://via.placeholder.com/150"}
             alt="profile"
-            className="w-32 h-32 rounded-full object-cover"
+            className="w-36 h-36 rounded-full object-cover border"
           />
-        ) : (
-          <FaUserCircle size={120} className="text-gray-400" />
-        )}
 
+          {editing && (
+            <label className="absolute bottom-2 right-2 bg-black/70 p-2 rounded-full cursor-pointer">
+              <FaCamera className="text-white" />
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </label>
+          )}
+        </div>
+
+        {/* USER INFO */}
         <div className="flex-1">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-semibold">{profile.username}</h2>
+            <h2 className="text-xl font-semibold">{user.username}</h2>
 
-            {!isOwnProfile && (
+            {!editing ? (
               <button
-                onClick={followHandler}
-                className={`px-4 py-1 rounded text-sm font-semibold ${
-                  isFollowing
-                    ? "bg-gray-200"
-                    : "bg-blue-500 text-white"
-                }`}
+                onClick={() => setEditing(true)}
+                className="px-4 py-1 border rounded-md text-sm font-medium"
               >
-                {isFollowing ? "Unfollow" : "Follow"}
+                Edit profile
+              </button>
+            ) : (
+              <button
+                onClick={handleUpdateProfile}
+                disabled={updating}
+                className="px-4 py-1 bg-blue-500 text-white rounded-md text-sm font-medium"
+              >
+                {updating ? "Saving..." : "Save"}
               </button>
             )}
 
-            {isOwnProfile && (
-              <button
-                onClick={() => setEditing(!editing)}
-                className="px-4 py-1 border rounded text-sm"
-              >
-                {editing ? "Close" : "Edit Profile"}
-              </button>
-            )}
+            <FaEllipsisH />
           </div>
 
-          <div className="flex gap-6 mt-4 text-sm">
-            <span><b>{profile.posts?.length || 0}</b> posts</span>
-            <span><b>{profile.followers?.length || 0}</b> followers</span>
-            <span><b>{profile.following?.length || 0}</b> following</span>
+          {/* STATS */}
+          <div className="flex gap-6 mt-4">
+            <p><span className="font-semibold">{posts.length}</span> posts</p>
+            <p><span className="font-semibold">{user.followers?.length || 0}</span> followers</p>
+            <p><span className="font-semibold">{user.following?.length || 0}</span> following</p>
           </div>
 
+          {/* BIO */}
           <div className="mt-4 text-sm">
-            <p>{profile.bio || "No bio added"}</p>
-            {profile.gender && (
-              <p className="text-gray-500">{profile.gender}</p>
+            <p className="font-semibold capitalize">{user.name}</p>
+
+            {!editing ? (
+              <>
+                <p className="font-medium">{user.bio || "No bio added yet"}</p>
+                {user.gender && (
+                  <p className="text-gray-600 capitalize">{user.gender}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full mt-2 p-2 border rounded-md"
+                  placeholder="Write your bio..."
+                />
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="mt-2 p-2 border rounded-md"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* EDIT FORM */}
-      {editing && (
-        <div className="mt-6 border p-5 rounded-md bg-gray-50">
-          <input
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Bio"
-            className="w-full border px-3 py-2 mb-3 rounded"
-          />
+      {/* ================= POSTS GRID ================= */}
+      <div className="mt-12 border-t pt-6">
+        <h3 className="text-center text-sm font-semibold tracking-widest mb-6">
+          POSTS
+        </h3>
 
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="w-full border px-3 py-2 mb-3 rounded"
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
+        {postLoading ? (
+          <p className="text-center text-gray-500">Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center text-gray-500">No posts yet</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-1">
+            {posts.map((post) => (
+              <div key={post._id} className="relative group aspect-square">
+                <img
+                  src={post.image}
+                  alt="post"
+                  className="w-full h-full object-cover"
+                />
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setProfilePhoto(e.target.files[0])}
-            className="mb-4"
-          />
-
-          <button
-            onClick={updateProfileHandler}
-            disabled={saving}
-            className={`px-4 py-2 rounded text-white ${
-              saving
-                ? "bg-blue-300"
-                : "bg-blue-500 hover:bg-blue-600"
-            }`}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-6 text-white text-sm">
+                  <span>❤️ {post.likes.length}</span>
+                  <span>💬 {post.comments.length}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default Profile;

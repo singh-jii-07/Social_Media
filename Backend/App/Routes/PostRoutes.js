@@ -15,7 +15,23 @@ import {
 
 const PostRouter = express.Router();
 
-PostRouter.post("/addpost",isAuthenticated, upload.single('image'), addNewPost);
+PostRouter.post(
+  "/addpost",
+  isAuthenticated,
+  (req, res, next) => {
+    upload.single("image")(req, res, function (err) {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message,
+        });
+      }
+      next();
+    });
+  },
+  addNewPost
+);
+
 PostRouter.get ("/getpost",isAuthenticated,getAllPost);
 PostRouter.get ("/getpostuser/:id",isAuthenticated, getUserPost);
 PostRouter.get ("/like/:id",isAuthenticated, likePost);

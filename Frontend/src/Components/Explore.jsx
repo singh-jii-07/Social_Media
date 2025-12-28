@@ -1,8 +1,9 @@
 import React from 'react'
+import Feed from './Feed'
 
 function Explore() {
   return (
-    <div>Explore</div>
+    <Feed/>
   )
 }
 
