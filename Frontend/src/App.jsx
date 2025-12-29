@@ -10,6 +10,7 @@ import Message from "./Components/Message";
 import Notifications from "./Components/Notifications";
 import Explore from "./Components/Explore";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import Chatpage from "./Components/Chatpage";
 
 function App() {
   const browserRouter = createBrowserRouter([
@@ -47,6 +48,10 @@ function App() {
             {
               path: "explore",
               element: <Explore />,
+            },
+            {
+              path: "chatpage",
+              element: <Chatpage />,
             },
           ],
         },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEllipsisH, FaCamera } from "react-icons/fa";
+import { FaEllipsisH, FaCamera, FaBookmark } from "react-icons/fa";
 
 const USER_API = "http://localhost:5000/api/users";
 const POST_API = "http://localhost:5000/api/post";
@@ -11,8 +11,13 @@ const Profile = () => {
 
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [postLoading, setPostLoading] = useState(true);
+  const [savedLoading, setSavedLoading] = useState(true);
+
+  const [activeTab, setActiveTab] = useState("posts");
 
   // edit states
   const [editing, setEditing] = useState(false);
@@ -21,17 +26,14 @@ const Profile = () => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [updating, setUpdating] = useState(false);
 
-  /* ================= FETCH PROFILE ================= */
+  /* ================= FETCH DATA ================= */
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
           `${USER_API}/profile/${loggedInUser._id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-
         setUser(res.data.user);
         setBio(res.data.user.bio || "");
         setGender(res.data.user.gender || "");
@@ -46,9 +48,7 @@ const Profile = () => {
       try {
         const res = await axios.get(
           `${POST_API}/getpostuser/${loggedInUser._id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setPosts(res.data.posts);
       } catch (err) {
@@ -58,8 +58,24 @@ const Profile = () => {
       }
     };
 
+    const fetchSavedPosts = async () => {
+      try {
+        const res = await axios.get(
+          `${POST_API}/bookmark/${loggedInUser._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSavedPosts(res.data.posts);
+        console.log(setSavedPosts)
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setSavedLoading(false);
+      }
+    };
+
     fetchProfile();
     fetchUserPosts();
+    fetchSavedPosts();
   }, []);
 
   /* ================= IMAGE CHANGE ================= */
@@ -71,7 +87,6 @@ const Profile = () => {
       alert("Profile photo must be less than 5MB");
       return;
     }
-
     setProfilePhoto(file);
   };
 
@@ -84,16 +99,12 @@ const Profile = () => {
       formData.append("gender", gender);
       if (profilePhoto) formData.append("profilePhoto", profilePhoto);
 
-      const res = await axios.post(
-        `${USER_API}/profile/edit`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post(`${USER_API}/profile/edit`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       setUser(res.data.user);
       setEditing(false);
@@ -111,85 +122,58 @@ const Profile = () => {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 px-4">
-      {/* ================= TOP SECTION ================= */}
+      {/* ================= TOP ================= */}
       <div className="flex gap-10 items-center">
-        {/* PROFILE IMAGE */}
         <div className="relative">
           <img
             src={user.profilePicture || "https://via.placeholder.com/150"}
             alt="profile"
             className="w-36 h-36 rounded-full object-cover border"
           />
-
           {editing && (
             <label className="absolute bottom-2 right-2 bg-black/70 p-2 rounded-full cursor-pointer">
               <FaCamera className="text-white" />
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
+              <input type="file" hidden accept="image/*" onChange={handleImageChange} />
             </label>
           )}
         </div>
 
-        {/* USER INFO */}
         <div className="flex-1">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-semibold">{user.username}</h2>
-
             {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="px-4 py-1 border rounded-md text-sm font-medium"
-              >
+              <button onClick={() => setEditing(true)} className="px-4 py-1 border rounded-md text-sm">
                 Edit profile
               </button>
             ) : (
               <button
                 onClick={handleUpdateProfile}
                 disabled={updating}
-                className="px-4 py-1 bg-blue-500 text-white rounded-md text-sm font-medium"
+                className="px-4 py-1 bg-blue-500 text-white rounded-md text-sm"
               >
                 {updating ? "Saving..." : "Save"}
               </button>
             )}
-
             <FaEllipsisH />
           </div>
 
-          {/* STATS */}
           <div className="flex gap-6 mt-4">
-            <p><span className="font-semibold">{posts.length}</span> posts</p>
-            <p><span className="font-semibold">{user.followers?.length || 0}</span> followers</p>
-            <p><span className="font-semibold">{user.following?.length || 0}</span> following</p>
+            <p><b>{posts.length}</b> posts</p>
+            <p><b>{user.followers?.length || 0}</b> followers</p>
+            <p><b>{user.following?.length || 0}</b> following</p>
           </div>
 
-          {/* BIO */}
           <div className="mt-4 text-sm">
-            <p className="font-semibold capitalize">{user.name}</p>
-
+            <p className="font-semibold">{user.name}</p>
             {!editing ? (
               <>
-                <p className="font-medium">{user.bio || "No bio added yet"}</p>
-                {user.gender && (
-                  <p className="text-gray-600 capitalize">{user.gender}</p>
-                )}
+                <p>{user.bio || "No bio added yet"}</p>
+                {user.gender && <p className="text-gray-500 capitalize">{user.gender}</p>}
               </>
             ) : (
               <>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="w-full mt-2 p-2 border rounded-md"
-                  placeholder="Write your bio..."
-                />
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="mt-2 p-2 border rounded-md"
-                >
+                <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full border p-2 mt-2" />
+                <select value={gender} onChange={(e) => setGender(e.target.value)} className="border p-2 mt-2">
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -201,31 +185,40 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ================= POSTS GRID ================= */}
-      <div className="mt-12 border-t pt-6">
-        <h3 className="text-center text-sm font-semibold tracking-widest mb-6">
+      {/* ================= TABS ================= */}
+      <div className="flex justify-center gap-10 mt-10 border-t pt-4 text-sm font-semibold">
+        <button
+          onClick={() => setActiveTab("posts")}
+          className={activeTab === "posts" ? "border-b-2 border-black" : ""}
+        >
           POSTS
-        </h3>
+        </button>
+        <button
+          onClick={() => setActiveTab("saved")}
+          className={activeTab === "saved" ? "border-b-2 border-black" : ""}
+        >
+          <FaBookmark className="inline mr-1" /> SAVED
+        </button>
+      </div>
 
-        {postLoading ? (
-          <p className="text-center text-gray-500">Loading posts...</p>
-        ) : posts.length === 0 ? (
-          <p className="text-center text-gray-500">No posts yet</p>
-        ) : (
+      {/* ================= POSTS / SAVED GRID ================= */}
+      <div className="mt-6">
+        {activeTab === "posts" && (
+          postLoading ? <p className="text-center">Loading posts...</p> :
+          posts.length === 0 ? <p className="text-center">No posts yet</p> :
           <div className="grid grid-cols-3 gap-1">
             {posts.map((post) => (
-              <div key={post._id} className="relative group aspect-square">
-                <img
-                  src={post.image}
-                  alt="post"
-                  className="w-full h-full object-cover"
-                />
+              <img key={post._id} src={post.image} className="aspect-square object-cover" />
+            ))}
+          </div>
+        )}
 
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-6 text-white text-sm">
-                  <span>❤️ {post.likes.length}</span>
-                  <span>💬 {post.comments.length}</span>
-                </div>
-              </div>
+        {activeTab === "saved" && (
+          savedLoading ? <p className="text-center">Loading saved posts...</p> :
+          savedPosts.length === 0 ? <p className="text-center">No saved posts</p> :
+          <div className="grid grid-cols-3 gap-1">
+            {savedPosts.map((post) => (
+              <img key={post._id} src={post.image} className="aspect-square object-cover" />
             ))}
           </div>
         )}

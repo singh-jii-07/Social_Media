@@ -1,65 +1,74 @@
 import Conversation from "../Models/ConversationModels.js";
 import Message from "../Models/MessageModels.js";
-const sendMessage = async (req, res) => {
+import { getReceiverSocketId, io } from "../Socket/Socket.js";
+
+export const sendMessage = async (req, res) => {
   try {
     const senderId = req.id;
     const receiverId = req.params.id;
-    const message = req.body?.textMessage; 
+    const { textMessage } = req.body;
 
-    if (!message || message.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "textMessage is required",
-      });
+    if (!textMessage || textMessage.trim() === "") {
+      return res.status(400).json({ success: false });
     }
 
     let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
+      participants: { $all: [senderId, receiverId] }
     });
-    // establish the conversation if not started yet.
+
     if (!conversation) {
       conversation = await Conversation.create({
-        participants: [senderId, receiverId],
+        participants: [senderId, receiverId]
       });
     }
-   const newMessage = await Message.create({
-            sender: senderId,     // FIXED
-            receiver: receiverId, // FIXED
-            message
-        });
-    if (newMessage) conversation.messages.push(newMessage._id);
 
-    await Promise.all([conversation.save(), newMessage.save()]);
+    const newMessage = await Message.create({
+      sender: senderId,
+      receiver: receiverId,
+      message: textMessage,
+      messageType: "text"   // ✅ REQUIRED FIELD
+    });
 
-    // implement socket io for real time data transfer
-    // const receiverSocketId = getReceiverSocketId(receiverId);
-    // if(receiverSocketId){
-    //     io.to(receiverSocketId).emit('newMessage', newMessage);
-    // }
+    conversation.messages.push(newMessage._id);
+    await conversation.save();
+
+    // socket emit
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     return res.status(201).json({
       success: true,
-      newMessage,
+      newMessage
     });
-  } catch (error) {
-    console.log(error);
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false });
   }
 };
-const getMessage = async (req, res) => {
+
+export const getMessage = async (req, res) => {
   try {
     const senderId = req.id;
     const receiverId = req.params.id;
-    const conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    }).populate("messages");
-    if (!conversation)
-      return res.status(200).json({ success: true, messages: [] });
 
-    return res
-      .status(200)
-      .json({ success: true, messages: conversation?.messages });
-  } catch (error) {
-    console.log(error);
+    const conversation = await Conversation.findOne({
+      participants: { $all: [senderId, receiverId] }
+    }).populate("messages");
+
+    if (!conversation) {
+      return res.json({ success: true, messages: [] });
+    }
+
+    return res.json({
+      success: true,
+      messages: conversation.messages
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false });
   }
 };
-export { sendMessage, getMessage };
