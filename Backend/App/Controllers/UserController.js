@@ -237,6 +237,23 @@ const followOrUnfollow = async (req, res) => {
         console.log(error);
     }
 }
+// GET /api/users/following
+const getFollowingUsers = async (req, res) => {
+  try {
+    const user = await User.findById(req.id).populate(
+      "following",
+      "username profilePicture"
+    );
+
+    return res.status(200).json({
+      success: true,
+      users: user.following,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 
-export { register, login,logout,getProfile,editProfile,getSuggestedUsers,followOrUnfollow};
+
+export { register, login,logout,getProfile,editProfile,getSuggestedUsers,followOrUnfollow,getFollowingUsers};

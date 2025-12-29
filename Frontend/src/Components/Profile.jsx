@@ -65,7 +65,6 @@ const Profile = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setSavedPosts(res.data.posts);
-        console.log(setSavedPosts)
       } catch (err) {
         console.log(err);
       } finally {
@@ -78,11 +77,44 @@ const Profile = () => {
     fetchSavedPosts();
   }, []);
 
+  /* ================= FOLLOW / UNFOLLOW ================= */
+  const isOwnProfile = loggedInUser._id === user?._id;
+  const isFollowing = user?.followers?.includes(loggedInUser._id);
+
+  const handleFollowUnfollow = async () => {
+    try {
+      const res = await axios.post(
+        `${USER_API}/followorunfollow/${user._id}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        setUser((prev) => {
+          if (isFollowing) {
+            return {
+              ...prev,
+              followers: prev.followers.filter(
+                (id) => id !== loggedInUser._id
+              ),
+            };
+          } else {
+            return {
+              ...prev,
+              followers: [...prev.followers, loggedInUser._id],
+            };
+          }
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   /* ================= IMAGE CHANGE ================= */
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       alert("Profile photo must be less than 5MB");
       return;
@@ -108,7 +140,6 @@ const Profile = () => {
 
       setUser(res.data.user);
       setEditing(false);
-      alert("Profile updated successfully");
     } catch (err) {
       console.log(err);
       alert("Profile update failed");
@@ -133,7 +164,12 @@ const Profile = () => {
           {editing && (
             <label className="absolute bottom-2 right-2 bg-black/70 p-2 rounded-full cursor-pointer">
               <FaCamera className="text-white" />
-              <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleImageChange}
+              />
             </label>
           )}
         </div>
@@ -141,19 +177,38 @@ const Profile = () => {
         <div className="flex-1">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-semibold">{user.username}</h2>
-            {!editing ? (
-              <button onClick={() => setEditing(true)} className="px-4 py-1 border rounded-md text-sm">
-                Edit profile
-              </button>
+
+            {/* BUTTON */}
+            {isOwnProfile ? (
+              !editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="px-4 py-1 border rounded-md text-sm"
+                >
+                  Edit profile
+                </button>
+              ) : (
+                <button
+                  onClick={handleUpdateProfile}
+                  disabled={updating}
+                  className="px-4 py-1 bg-blue-500 text-white rounded-md text-sm"
+                >
+                  {updating ? "Saving..." : "Save"}
+                </button>
+              )
             ) : (
               <button
-                onClick={handleUpdateProfile}
-                disabled={updating}
-                className="px-4 py-1 bg-blue-500 text-white rounded-md text-sm"
+                onClick={handleFollowUnfollow}
+                className={`px-4 py-1 rounded-md text-sm font-medium ${
+                  isFollowing
+                    ? "border text-black"
+                    : "bg-blue-500 text-white"
+                }`}
               >
-                {updating ? "Saving..." : "Save"}
+                {isFollowing ? "Unfollow" : "Follow"}
               </button>
             )}
+
             <FaEllipsisH />
           </div>
 
@@ -168,12 +223,22 @@ const Profile = () => {
             {!editing ? (
               <>
                 <p>{user.bio || "No bio added yet"}</p>
-                {user.gender && <p className="text-gray-500 capitalize">{user.gender}</p>}
+                {user.gender && (
+                  <p className="text-gray-500 capitalize">{user.gender}</p>
+                )}
               </>
             ) : (
               <>
-                <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full border p-2 mt-2" />
-                <select value={gender} onChange={(e) => setGender(e.target.value)} className="border p-2 mt-2">
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full border p-2 mt-2"
+                />
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="border p-2 mt-2"
+                >
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -201,27 +266,41 @@ const Profile = () => {
         </button>
       </div>
 
-      {/* ================= POSTS / SAVED GRID ================= */}
+      {/* ================= POSTS / SAVED ================= */}
       <div className="mt-6">
-        {activeTab === "posts" && (
-          postLoading ? <p className="text-center">Loading posts...</p> :
-          posts.length === 0 ? <p className="text-center">No posts yet</p> :
-          <div className="grid grid-cols-3 gap-1">
-            {posts.map((post) => (
-              <img key={post._id} src={post.image} className="aspect-square object-cover" />
-            ))}
-          </div>
-        )}
+        {activeTab === "posts" &&
+          (postLoading ? (
+            <p className="text-center">Loading posts...</p>
+          ) : posts.length === 0 ? (
+            <p className="text-center">No posts yet</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-1">
+              {posts.map((post) => (
+                <img
+                  key={post._id}
+                  src={post.image}
+                  className="aspect-square object-cover"
+                />
+              ))}
+            </div>
+          ))}
 
-        {activeTab === "saved" && (
-          savedLoading ? <p className="text-center">Loading saved posts...</p> :
-          savedPosts.length === 0 ? <p className="text-center">No saved posts</p> :
-          <div className="grid grid-cols-3 gap-1">
-            {savedPosts.map((post) => (
-              <img key={post._id} src={post.image} className="aspect-square object-cover" />
-            ))}
-          </div>
-        )}
+        {activeTab === "saved" &&
+          (savedLoading ? (
+            <p className="text-center">Loading saved posts...</p>
+          ) : savedPosts.length === 0 ? (
+            <p className="text-center">No saved posts</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-1">
+              {savedPosts.map((post) => (
+                <img
+                  key={post._id}
+                  src={post.image}
+                  className="aspect-square object-cover"
+                />
+              ))}
+            </div>
+          ))}
       </div>
     </div>
   );

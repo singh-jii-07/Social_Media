@@ -6,7 +6,6 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Profile from "./Components/Profile";
 import CreatPost from "./Components/CreatPost";
 import Search from "./Components/Search";
-import Message from "./Components/Message";
 import Notifications from "./Components/Notifications";
 import Explore from "./Components/Explore";
 import ProtectedRoute from "./Components/ProtectedRoute";
@@ -15,56 +14,25 @@ import Chatpage from "./Components/Chatpage";
 function App() {
   const browserRouter = createBrowserRouter([
     {
-      element: <ProtectedRoute />,   
+      element: <ProtectedRoute />,
       children: [
         {
           path: "/",
           element: <MainLayout />,
           children: [
-            {
-              index: true,
-              element: <Home />,
-            },
-            {
-              path: "profile",
-              element: <Profile />,
-            },
-            {
-              path: "create",
-              element: <CreatPost />,
-            },
-            {
-              path: "search",
-              element: <Search />,
-            },
-            {
-              path: "messages",
-              element: <Message />,
-            },
-            {
-              path: "notifications",
-              element: <Notifications />,
-            },
-            {
-              path: "explore",
-              element: <Explore />,
-            },
-            {
-              path: "chatpage",
-              element: <Chatpage />,
-            },
+            { index: true, element: <Home /> },
+            { path: "profile", element: <Profile /> },
+            { path: "create", element: <CreatPost /> },
+            { path: "search", element: <Search /> },
+            { path: "messages", element: <Chatpage /> }, 
+            { path: "notifications", element: <Notifications /> },
+            { path: "explore", element: <Explore /> },
           ],
         },
       ],
     },
-    {
-      path: "/login",
-      element: <Login />,
-    },
-    {
-      path: "/signup",
-      element: <Signup />,
-    },
+    { path: "/login", element: <Login /> },
+    { path: "/signup", element: <Signup /> },
   ]);
 
   return <RouterProvider router={browserRouter} />;

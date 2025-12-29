@@ -7,6 +7,7 @@ import {
   getProfile,
   editProfile,
   getSuggestedUsers,
+  getFollowingUsers,
   followOrUnfollow,
 } from "../Controllers/UserController.js";
 
@@ -25,4 +26,5 @@ userRoutes.post(
 );
 userRoutes.get("/suggested", isAuthenticated, getSuggestedUsers);
 userRoutes.post("/followorunfollow/:id", isAuthenticated, followOrUnfollow);
+userRoutes.get("/following", isAuthenticated, getFollowingUsers);
 export default userRoutes;

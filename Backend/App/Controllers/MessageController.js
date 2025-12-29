@@ -26,7 +26,7 @@ export const sendMessage = async (req, res) => {
       sender: senderId,
       receiver: receiverId,
       message: textMessage,
-      messageType: "text"   // ✅ REQUIRED FIELD
+      messageType: "text"   
     });
 
     conversation.messages.push(newMessage._id);

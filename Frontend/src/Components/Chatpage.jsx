@@ -1,14 +1,40 @@
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
-import Messages from "./Message";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Messages from "./Message";
 
 const ChatPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [textMessage, setTextMessage] = useState("");
+  const [followingUsers, setFollowingUsers] = useState([]);
 
-  const { user, suggestedUsers } = useSelector((store) => store.auth);
+  // ✅ user redux se nahi, localStorage se
+  const user = JSON.parse(localStorage.getItem("user"));
 
+  /* ================= FETCH FOLLOWING USERS ================= */
+  useEffect(() => {
+    const fetchFollowingUsers = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:5000/api/users/following",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (res.data.success) {
+          setFollowingUsers(res.data.users);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchFollowingUsers();
+  }, []);
+
+  /* ================= SEND MESSAGE ================= */
   const sendMessageHandler = async () => {
     if (!textMessage.trim() || !selectedUser) return;
 
@@ -23,23 +49,36 @@ const ChatPage = () => {
         }
       );
       setTextMessage("");
-      // Messages component automatically reload karega
     } catch (error) {
       console.log(error);
     }
   };
 
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Please login
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen">
-      {/* LEFT USER LIST */}
+      {/* LEFT CHAT LIST */}
       <div className="w-1/4 border-r">
-        <div className="p-4 font-semibold border-b">{user?.username}</div>
+        <div className="p-4 font-semibold border-b">Chats</div>
 
         <div className="overflow-y-auto">
-          {suggestedUsers.map((u) => (
+          {followingUsers.length === 0 && (
+            <p className="text-center text-gray-400 mt-4">
+              Follow someone to start chat
+            </p>
+          )}
+
+          {followingUsers.map((u) => (
             <div
               key={u._id}
-              onClick={() => setSelectedUser(u)} // 👈 HERE
+              onClick={() => setSelectedUser(u)}
               className={`px-4 py-3 cursor-pointer hover:bg-gray-100 ${
                 selectedUser?._id === u._id ? "bg-gray-200" : ""
               }`}
@@ -65,6 +104,7 @@ const ChatPage = () => {
               onChange={(e) => setTextMessage(e.target.value)}
               placeholder="Type a message..."
               className="flex-1 border rounded px-3 py-2 outline-none"
+              onKeyDown={(e) => e.key === "Enter" && sendMessageHandler()}
             />
             <button
               onClick={sendMessageHandler}
@@ -76,7 +116,7 @@ const ChatPage = () => {
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center text-gray-500">
-          Select a user to start chat
+          Select a chat
         </div>
       )}
     </div>
